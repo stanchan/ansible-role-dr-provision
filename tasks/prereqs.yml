@@ -1,0 +1,16 @@
+---
+# - name: create provision group
+#   group:
+#     name: "{{ provision_group }}"
+#     system: yes
+#     state: present
+
+# - name: create provision user
+#   user:
+#     name: "{{ provision_user }}"
+#     state: present
+#     comment: "{{ provision_user }}"
+#     group: "{{ provision_group }}"
+#     shell: /sbin/nologin
+#     createhome: no
+#     system: yes

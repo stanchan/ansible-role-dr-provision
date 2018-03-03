@@ -1,0 +1,65 @@
+---
+# defaults file for dr-provision
+systemd_root: /lib/systemd/system
+
+provision_release_tag: v3.6.0
+provision_release_base_url: https://github.com/digitalrebar/provision/releases/download
+provision_user: root
+provision_group: root
+provision_admin_user: admin
+provision_admin_password: password
+provision_root_dir: /opt
+provision_content_dir: "{{ provision_root_dir }}/dr-provision"
+provision_download_dir: "{{ provision_root_dir }}/dr-provision-releases"
+provision_var_dir: /var/lib/dr-provision
+provision_bin_dir: /usr/local/bin
+provision_content_repo: https://github.com/digitalrebar/provision-content.git
+provision_content_bootenvs:
+  - sledgehammer
+  - discovery
+  - centos-7
+  - debian-9
+provision_install_default_isos: yes
+provision_preferences: {}
+provision_options:
+  disable-tftp: no
+  disable-provisioner: no
+  disable-dhcp: no
+  disable-pxe: no
+  static-port: 8091
+  tftp-port: 69
+  api-port: 8092
+  dhcp-port: 67
+  binl-port: 4011
+  unknown-token-timeout: 600
+  known-token-timeout: 3600
+  static-ip: null
+  force-static: no
+  backend: directory
+  local-content: directory:///etc/dr-provision?codec=yaml
+  default-content: file:///usr/share/dr-provision/default.yaml?codec=yaml
+  base-root: digitalrebar
+  plugin-root: plugins
+  log-root: job-logs
+  saas-content-root: saas-content
+  file-root: tftpboot
+  replace-root: replace
+  dev-ui: no
+  ui-url: https://rackn.github.io/provision-ux
+  dhcp-ifs: no
+  default-stage: none
+  default-boot-env: local
+  unknown-boot-env: ignore
+  debug-bootenv: warn
+  debug-dhcp: warn
+  debug-renderer: warn
+  debug-frontend: warn
+  debug-plugins: warn
+  tls-key: server.key
+  tls-cert: server.crt
+  use-old-ciphers: no
+  drp-id: no
+  cert-type: P384
+  base-token-secret: no
+  system-grantor-secret: no
+  log-level: warn

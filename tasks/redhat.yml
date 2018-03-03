@@ -1,0 +1,24 @@
+---
+- name: Setup redhat
+  block:
+    - name: update all packages
+      yum:
+        name: "*"
+        state: latest
+
+    - name: add epel repo
+      yum:
+        name: epel-release
+        state: latest
+
+    - name: install dependencies
+      yum:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - jq
+        - git
+        - unzip
+        - p7zip
+        - bsdtar
+  when: ansible_os_family == "RedHat"

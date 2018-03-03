@@ -1,0 +1,26 @@
+galaxy_info:
+  author: Stan Chan
+  description: dr-provision
+  license: license (Apache)
+  min_ansible_version: 2.4
+  # min_ansible_container_version:
+  github_branch:
+  platforms:
+    - name: EL
+      versions:
+        - 7
+    - name: Debian
+      versions:
+        - 9
+        - 8
+    - name: Ubuntu
+      versions:
+        - xenial
+    - name: Alpine
+      versions:
+        - 3.7.0
+  galaxy_tags:
+    - dr-provision
+    - rebar
+    - provision
+dependencies:

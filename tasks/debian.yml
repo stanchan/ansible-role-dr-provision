@@ -1,0 +1,32 @@
+---
+- name: Setup debian
+  block:
+    - name: install dependent packages
+      apt:
+        name: "{{ item }}"
+        state: latest
+        update_cache: yes
+      with_items:
+        - apt-transport-https
+        - ca-certificates
+        - jq
+        - git
+        - unzip
+        - p7zip-full
+        - bsdtar
+
+    - name: run apt update
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_distribution == 'Debian'
+      register: apt_result
+      until: apt_result|success
+      retries: 3
+      delay: 1
+      ignore_errors: yes
+
+    - name: retry if needed using command apt-get update
+      command: apt-get update
+      when: apt_result|failed
+  when: ansible_os_family == "Debian"

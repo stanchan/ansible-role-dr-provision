@@ -1,0 +1,44 @@
+---
+- name: create dr-provision directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  with_items:
+  - "{{ provision_download_dir }}"
+  - "{{ provision_content_dir }}"
+  - "{{ provision_download_dir }}/{{ provision_release_tag }}"
+
+- name: get dr-provision artifacts
+  get_url:
+    url: "{{ provision_release_base_url }}/{{ provision_release_tag }}/{{ item }}"
+    dest: "{{ provision_download_dir }}//{{ provision_release_tag }}/{{ item }}"
+  with_items:
+    - dr-provision.zip
+    - dr-provision.sha256
+
+- name: verify dr-provision artifacts
+  command: sha256sum -c dr-provision.sha256
+  args:
+    chdir: "{{ provision_download_dir }}//{{ provision_release_tag }}"
+  register: verify_provision_results
+
+- name: deploy dr-provision artifacts
+  unarchive:
+    src: "{{ provision_download_dir }}/{{ provision_release_tag }}/dr-provision.zip"
+    dest: "{{ provision_download_dir }}"
+    remote_src: yes
+  when: verify_provision_results.stdout | search("OK")
+
+- name: install dr-provision binaries
+  copy:
+    src: "{{ provision_download_dir }}/bin/linux/amd64/{{ item }}"
+    dest: "{{ provision_bin_dir }}/{{ item }}"
+    mode: 0755
+    remote_src: yes
+  with_items:
+    - dr-provision
+    - drpcli
+  when: verify_provision_results.stdout | search("OK")
+  notify:
+    - restart dr-provision

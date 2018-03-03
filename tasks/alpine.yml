@@ -1,0 +1,40 @@
+---
+- name: Setup docker for alpine linux
+  block:
+    - name: install packages
+      apk:
+        name: bash,ca-certificates,rsync,tar,zip
+        state: present
+        update_cache: yes
+
+    - name: import signing key
+      get_url:
+        url: https://raw.githubusercontent.com/sgerrand/alpine-pkg-glibc/master/sgerrand.rsa.pub
+        dest: /etc/apk/keys/sgerrand.rsa.pub
+        mode: 0440
+      when: provision_glibc_environment
+
+    - name: download glibc package
+      get_url:
+        url: "{{ glibc_package_url }}"
+        dest: /tmp/glibc-2.26-r0.apk
+        mode: 0644
+      when: docker_glibc_environment
+
+    - name: install packages
+      apk:
+        name: git,jq,unzip,p7zip,libarchive-tools
+        state: present
+        update_cache: yes
+      
+    - name: install glibc
+      raw: apk add /tmp/glibc-2.26-r0.apk
+      when: provision_glibc_environment
+
+    - name: update all installed packages
+      apk:
+        upgrade: yes
+
+    - name: clean up cache packages
+      raw: rm -rf /var/cache/apk/*
+  when: ansible_os_family == "Alpine"

@@ -1,0 +1,20 @@
+---
+- name: install systemd unit file for dr-provision
+  copy:
+    src: "{{ provision_download_dir }}/assets/startup/dr-provision.service"
+    dest: "{{ systemd_root }}/dr-provision.service"
+    remote_src: yes
+
+- name: update startup command
+  lineinfile:
+    dest: "{{ systemd_root }}/dr-provision.service"
+    regexp: '^ExecStart='
+    line: "ExecStart={{ provision_bin_dir }}/dr-provision{{ provision_options | provision_options }}"
+    state: present
+
+- name: start and enable dr-provision
+  systemd:
+    name: dr-provision
+    state: started
+    enabled: yes
+    daemon_reload: yes

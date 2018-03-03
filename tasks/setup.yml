@@ -1,0 +1,52 @@
+---
+- name: clone provision-content
+  git:
+    repo: "{{ provision_content_repo }}"
+    dest: "{{ provision_content_dir }}"
+
+- name: config dr-provision admin user
+  shell: "drpcli users create {{ provision_admin_user }}"
+  args:
+    creates: "{{ provision_var_dir }}/digitalrebar/users/{{ provision_admin_user }}.json"
+
+- name: config dr-provision user api password
+  shell: "drpcli -U {{ provision_admin_user }} -P \"{{ provision_admin_password }}\" prefs list >/dev/null 2>&1 && exit 0 || drpcli users password {{ provision_admin_user }} \"{{ provision_admin_password }}\" && exit 99"
+  register: provision_password_results
+  changed_when: provision_password_results.rc == 99
+  failed_when: provision_password_results.rc != 99 and provision_password_results.rc != 0
+
+- name: config shell environment with dr-provision api credentials
+  copy:
+    content: "#!/bin/bash\nexport RS_KEY=\"{{ provision_admin_user }}:{{ provision_admin_password }}\""
+    dest: "/etc/profile.d/dr-provision.sh"
+    mode: 0755
+
+# - name: remove default rocketskates user if different from admin user
+#   shell: "drpcli users destroy rocketskates"
+#   args:
+#     removes: "{{ provision_var_dir }}/digitalrebar/users/rocketskates.json"
+#   when: provision_admin_user != "rocketskates"
+
+- name: add drpcli autocomplete definitions
+  shell: "drpcli autocomplete /etc/bash_completion.d/drpcli"
+  args:
+    creates: "/etc/bash_completion.d/drpcli"
+
+# - name: generate drpcli token
+#   shell: "drpcli users token {{ provision_admin_user }}"
+#   register: provision_token
+
+- name: config dr-provision preferences
+  copy:
+    content: '{"Meta":{},"Name":"{{ item.key }}","Val":"{{ item.value }}"}'
+    dest: "{{ provision_var_dir }}/digitalrebar/preferences/{{ item.key }}.json"
+  with_dict: "{{ provision_preferences }}"
+  notify:
+    - restart dr-provision
+
+- name: install boot environments
+  shell: "drpcli bootenvs install content/bootenvs/{{ item }}.yml"
+  args:
+    chdir: "{{ provision_content_dir }}"
+    creates: "{{ provision_var_dir }}/digitalrebar/bootenvs/{{ item }}.json"
+  with_items: "{{ provision_content_bootenvs }}"

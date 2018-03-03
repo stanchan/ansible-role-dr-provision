@@ -1,0 +1,6 @@
+---
+# handlers file for dr-provision
+- name: restart dr-provision
+  service:
+    name: dr-provision
+    state: restarted
