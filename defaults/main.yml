@@ -1,24 +1,26 @@
 ---
+clean: false
 # defaults file for dr-provision
 systemd_root: /lib/systemd/system
 
-provision_release_tag: v3.6.0
+provision_release_tag: v3.7.3
 provision_release_base_url: https://github.com/digitalrebar/provision/releases/download
+provision_content_release_tag: v1.6.2
+provision_content_release_base_url: https://github.com/digitalrebar/provision-content/releases/download
 provision_user: root
 provision_group: root
 provision_admin_user: admin
 provision_admin_password: password
 provision_root_dir: /opt
-provision_content_dir: "{{ provision_root_dir }}/dr-provision"
+provision_content_dir: "{{ provision_root_dir }}/dr-provision-content-releases"
 provision_download_dir: "{{ provision_root_dir }}/dr-provision-releases"
 provision_var_dir: /var/lib/dr-provision
 provision_bin_dir: /usr/local/bin
-provision_content_repo: https://github.com/digitalrebar/provision-content.git
 provision_content_bootenvs:
   - sledgehammer
   - discovery
-  - centos-7
-  - debian-9
+  - centos-7-install
+  - debian-9-install
 provision_install_default_isos: yes
 provision_preferences: {}
 provision_options:
@@ -38,14 +40,15 @@ provision_options:
   backend: directory
   local-content: directory:///etc/dr-provision?codec=yaml
   default-content: file:///usr/share/dr-provision/default.yaml?codec=yaml
-  base-root: digitalrebar
+  base-root: "{{ provision_var_dir }}"
+  data-root: digitalrebar
   plugin-root: plugins
   log-root: job-logs
   saas-content-root: saas-content
   file-root: tftpboot
   replace-root: replace
-  dev-ui: no
-  ui-url: https://rackn.github.io/provision-ux
+  local-ui: no
+  ui-url: https://portal.rackn.io
   dhcp-ifs: no
   default-stage: none
   default-boot-env: local

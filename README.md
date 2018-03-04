@@ -27,6 +27,26 @@ Including an example of how to use your role (for instance, with variables passe
       roles:
          - { role: dr-provision, x: 42 }
 
+
+Testing Locally
+---------------
+
+
+To test on a local centos system with git and ansible already installed, do the following:
+
+* Use git to clone the repo as ansible-role-dr-provision in a directory.
+  * e.g. `git clone https://github.com/stanchan/ansible-role-dr-provision`
+* cp drp-*.yml .
+
+To install, do:
+
+* `ansible-playbook drp-install.yml -i "localhost," -c local`
+
+To clean, do:
+
+* `ansible-playbook drp-clean.yml -i "localhost," -c local`
+
+
 License
 -------
 

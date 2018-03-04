@@ -1,19 +1,32 @@
 ---
-- name: clone provision-content
-  git:
-    repo: "{{ provision_content_repo }}"
-    dest: "{{ provision_content_dir }}"
+
+- command: drpcli contents exists drp-community-content
+  register: drp_community_content_result
+  ignore_errors: True
+
+- name: load drp-community-content
+  shell: "drpcli contents create \"{{ provision_content_dir }}/{{provision_content_release_tag}}/drp-community-content.yaml\""
+  when: verify_provision_content_results.stdout | search("OK") and drp_community_content_result.rc != 0
+
+- name: load drp-community-content
+  shell: "drpcli contents update drp-community-content \"{{ provision_content_dir }}/{{provision_content_release_tag}}/drp-community-content.yaml\""
+  when: verify_provision_content_results.stdout | search("OK") and drp_community_content_result.rc == 0
 
 - name: config dr-provision admin user
   shell: "drpcli users create {{ provision_admin_user }}"
   args:
     creates: "{{ provision_var_dir }}/digitalrebar/users/{{ provision_admin_user }}.json"
 
+- command: "drpcli -U {{ provision_admin_user }} -P \"{{ provision_admin_password }}\" prefs list >/dev/null 2>&1"
+  register: admin_password_set
+  ignore_errors: True
+
 - name: config dr-provision user api password
-  shell: "drpcli -U {{ provision_admin_user }} -P \"{{ provision_admin_password }}\" prefs list >/dev/null 2>&1 && exit 0 || drpcli users password {{ provision_admin_user }} \"{{ provision_admin_password }}\" && exit 99"
+  command: "drpcli users password {{ provision_admin_user }} \"{{ provision_admin_password }}\""
   register: provision_password_results
-  changed_when: provision_password_results.rc == 99
-  failed_when: provision_password_results.rc != 99 and provision_password_results.rc != 0
+  when: admin_password_set.rc != 0
+  changed_when: provision_password_results.rc == 0
+  failed_when: provision_password_results.rc != 0
 
 - name: config shell environment with dr-provision api credentials
   copy:
@@ -21,20 +34,20 @@
     dest: "/etc/profile.d/dr-provision.sh"
     mode: 0755
 
-# - name: remove default rocketskates user if different from admin user
-#   shell: "drpcli users destroy rocketskates"
-#   args:
-#     removes: "{{ provision_var_dir }}/digitalrebar/users/rocketskates.json"
-#   when: provision_admin_user != "rocketskates"
+#- name: remove default rocketskates user if different from admin user
+#  shell: "drpcli users destroy rocketskates"
+#  args:
+#    removes: "{{ provision_var_dir }}/digitalrebar/users/rocketskates.json"
+#  when: provision_admin_user != "rocketskates"
 
 - name: add drpcli autocomplete definitions
   shell: "drpcli autocomplete /etc/bash_completion.d/drpcli"
   args:
     creates: "/etc/bash_completion.d/drpcli"
 
-# - name: generate drpcli token
-#   shell: "drpcli users token {{ provision_admin_user }}"
-#   register: provision_token
+- name: generate drpcli token
+  shell: "drpcli -U {{ provision_admin_user }} -P \"{{ provision_admin_password }}\" users token {{ provision_admin_user }}"
+  register: provision_token
 
 - name: config dr-provision preferences
   copy:
@@ -44,9 +57,7 @@
   notify:
     - restart dr-provision
 
-- name: install boot environments
-  shell: "drpcli bootenvs install content/bootenvs/{{ item }}.yml"
-  args:
-    chdir: "{{ provision_content_dir }}"
-    creates: "{{ provision_var_dir }}/digitalrebar/bootenvs/{{ item }}.json"
+- name: get boot environments
+  shell: "drpcli  -U {{ provision_admin_user }} -P \"{{ provision_admin_password }}\" bootenvs uploadiso {{ item }}"
   with_items: "{{ provision_content_bootenvs }}"
+
