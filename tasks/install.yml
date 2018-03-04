@@ -8,6 +8,7 @@
   - "{{ provision_download_dir }}"
   - "{{ provision_content_dir }}"
   - "{{ provision_download_dir }}/{{ provision_release_tag }}"
+  - "{{ provision_content_dir }}/{{ provision_content_release_tag }}"
 
 - name: get dr-provision artifacts
   get_url:
@@ -17,11 +18,25 @@
     - dr-provision.zip
     - dr-provision.sha256
 
+- name: get provison-content artifacts
+  get_url:
+    url: "{{ provision_content_release_base_url }}/{{ provision_content_release_tag }}/{{ item }}"
+    dest: "{{ provision_content_dir }}//{{ provision_content_release_tag }}/{{ item }}"
+  with_items:
+    - drp-community-content.yaml
+    - drp-community-content.sha256
+
 - name: verify dr-provision artifacts
   command: sha256sum -c dr-provision.sha256
   args:
     chdir: "{{ provision_download_dir }}//{{ provision_release_tag }}"
   register: verify_provision_results
+
+- name: verify provision content artifact
+  command: sha256sum -c drp-community-content.sha256
+  args:
+    chdir: "{{ provision_content_dir }}//{{ provision_content_release_tag }}"
+  register: verify_provision_content_results
 
 - name: deploy dr-provision artifacts
   unarchive:
@@ -42,3 +57,4 @@
   when: verify_provision_results.stdout | search("OK")
   notify:
     - restart dr-provision
+

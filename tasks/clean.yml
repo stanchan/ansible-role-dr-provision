@@ -1,0 +1,34 @@
+---
+
+- name: stop and disable dr-provision
+  systemd:
+    name: dr-provision
+    state: stopped
+    enabled: no
+    daemon_reload: yes
+  ignore_errors: true
+
+- name: remove dr-provision binaries
+  file:
+    path: "{{ provision_bin_dir }}/{{ item }}"
+    state: absent
+  with_items:
+    - dr-provision
+    - drpcli
+
+- name: remove local-content
+  file:
+    state: absent
+    path: "{{ item }}"
+  with_items:
+    - /etc/provision
+    - /usr/share/dr-provision
+    - "{{ provision_var_dir }}"
+    - "{{ systemd_root }}/dr-provision.service"
+    - "/etc/profile.d/dr-provision.sh"
+    - "/etc/bash_completion.d/drpcli"
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+
