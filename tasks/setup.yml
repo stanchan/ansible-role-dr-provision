@@ -87,8 +87,8 @@
 
 - name: check drp-community-content exists
   command: drpcli -T {{ admin_token.json.Token }} contents exists drp-community-content
-  register: drp_community_content_result
   ignore_errors: yes
+  register: drp_community_content_result
 
 - name: create drp-community-content
   shell: "drpcli -T {{ admin_token.json.Token }} contents create \"{{ provision_content_dir }}/{{provision_content_release_tag}}/drp-community-content.yaml\""
@@ -101,3 +101,88 @@
 - name: get boot environments
   shell: "drpcli -T {{ admin_token.json.Token }} bootenvs uploadiso {{ item }}"
   with_items: "{{ provision_content_bootenvs }}"
+
+- name: copy custom bootenvs
+  copy:
+    src: "{{ provision_files_bootenvs_path }}/{{ item }}"
+    dest: "{{ provision_var_dir }}/digitalrebar/bootenvs/{{ item }}"
+    mode: 0640
+  register: provision_bootenvs
+  with_items: "{{ provision_bootenvs_files }}"
+
+- name: check custom bootenvs
+  shell: "drpcli -T {{ admin_token.json.Token }} bootenvs exists {{ item.item | regex_replace('.yaml','') }}"
+  ignore_errors: yes
+  register: provision_bootenvs_check
+  with_items: "{{ provision_bootenvs.results }}"
+
+- name: create custom bootenvs
+  shell: "drpcli -T {{ admin_token.json.Token }} bootenvs create - < {{ provision_var_dir }}/digitalrebar/bootenvs/{{ item.item.item }}"
+  when: item.rc is defined and item.rc == 1 and item.item.changed == true
+  with_items: "{{ provision_bootenvs_check.results }}"
+
+- name: update custom bootenvs
+  shell: "drpcli -T {{ admin_token.json.Token }} bootenvs update {{ item.item.item | regex_replace('.yaml','') }} - < {{ provision_var_dir }}/digitalrebar/bootenvs/{{ item.item.item }}"
+  when: item.rc is defined and item.rc == 0 and item.item.changed == true
+  with_items: "{{ provision_bootenvs_check.results }}"
+
+- name: copy custom templates
+  copy:
+    src: "{{ provision_files_templates_path }}/{{ item }}"
+    dest: "{{ provision_var_dir }}/digitalrebar/templates/{{ item }}"
+    mode: 0640
+  register: provision_templates
+  with_items: "{{ provision_templates_files }}"
+
+- name: check custom templates
+  shell: "drpcli -T {{ admin_token.json.Token }} templates exists {{ item.item | regex_replace('.yaml','') }}"
+  ignore_errors: yes
+  register: provision_templates_check
+  with_items: "{{ provision_templates.results }}"
+
+- name: create custom templates
+  shell: "drpcli -T {{ admin_token.json.Token }} templates create - < {{ provision_var_dir }}/digitalrebar/templates/{{ item.item.item }}"
+  when: item.rc is defined and item.rc == 1 and item.item.changed == true
+  with_items: "{{ provision_templates_check.results }}"
+
+- name: update custom templates
+  shell: "drpcli -T {{ admin_token.json.Token }} templates update {{ item.item.item | regex_replace('.yaml','') }} - < {{ provision_var_dir }}/digitalrebar/templates/{{ item.item.item }}"
+  when: item.rc is defined and item.rc == 0 and item.item.changed == true
+  with_items: "{{ provision_templates_check.results }}"
+
+- name: check custom profiles
+  shell: "drpcli -T {{ admin_token.json.Token }} profiles exists {{ item.Name }}"
+  ignore_errors: yes
+  register: provision_profiles_check
+  with_items: "{{ provision_profiles }}"
+
+- name: create custom profiles
+  shell: "drpcli -T {{ admin_token.json.Token }} profiles create '{{ item.item | to_json() }}'"
+  when: item.rc is defined and item.rc == 1
+  with_items: "{{ provision_profiles_check.results }}"
+
+- name: update custom profiles
+  shell: "drpcli -T {{ admin_token.json.Token }} profiles update {{ item.item.Name }} '{{ item.item | to_json() }}'"
+  when: item.rc is defined and item.rc == 0
+  with_items: "{{ provision_profiles_check.results }}"
+
+- name: check custom machines
+  shell: "drpcli -T {{ admin_token.json.Token }} machines list"
+  ignore_errors: yes
+  register: machine_profiles_check
+
+- name: store custom machines json
+  set_fact:
+    machine_profiles_json: "{{ machine_profiles_check.stdout | from_json }}"
+
+- name: create custom machines
+  shell: "drpcli -T {{ admin_token.json.Token }} machines create '{{ item | to_json() }}'"
+  when: item.Name not in (machine_profiles_json | selectattr('Name') | map(attribute='Name') | list)
+  with_items: "{{ provision_machines }}"
+
+- name: update custom machines
+  shell: "drpcli -T {{ admin_token.json.Token }} machines update {{ item.1.Uuid }} '{{ item.0 | to_json() }}'"
+  when: item.0.Name == item.1.Name
+  with_nested:
+    - "{{ provision_machines }}"
+    - "{{ machine_profiles_json }}"
