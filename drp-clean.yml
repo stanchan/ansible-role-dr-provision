@@ -1,4 +1,4 @@
 
 - hosts: all
   roles:
-     - { role: ansible-role-dr-provision, clean: true }
+     - { role: ansible-role-dr-provision, clean: yes }

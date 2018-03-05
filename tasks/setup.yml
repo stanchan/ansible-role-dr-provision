@@ -1,32 +1,49 @@
 ---
-
-- command: drpcli contents exists drp-community-content
-  register: drp_community_content_result
-  ignore_errors: True
-
-- name: load drp-community-content
-  shell: "drpcli contents create \"{{ provision_content_dir }}/{{provision_content_release_tag}}/drp-community-content.yaml\""
-  when: verify_provision_content_results.stdout | search("OK") and drp_community_content_result.rc != 0
-
-- name: load drp-community-content
-  shell: "drpcli contents update drp-community-content \"{{ provision_content_dir }}/{{provision_content_release_tag}}/drp-community-content.yaml\""
-  when: verify_provision_content_results.stdout | search("OK") and drp_community_content_result.rc == 0
-
-- name: config dr-provision admin user
+- name: create admin user
   shell: "drpcli users create {{ provision_admin_user }}"
   args:
     creates: "{{ provision_var_dir }}/digitalrebar/users/{{ provision_admin_user }}.json"
 
-- command: "drpcli -U {{ provision_admin_user }} -P \"{{ provision_admin_password }}\" prefs list >/dev/null 2>&1"
-  register: admin_password_set
-  ignore_errors: True
+- name: check password for admin user
+  uri:
+    url: https://127.0.0.1:8092/api/v3/prefs
+    user: "{{ provision_admin_user }}"
+    password: "{{ provision_admin_password }}"
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+    force_basic_auth: yes
+    return_content: no
+    validate_certs: no
+  ignore_errors: yes
+  register: admin_password_check
+  run_once: yes
 
-- name: config dr-provision user api password
-  command: "drpcli users password {{ provision_admin_user }} \"{{ provision_admin_password }}\""
-  register: provision_password_results
-  when: admin_password_set.rc != 0
-  changed_when: provision_password_results.rc == 0
-  failed_when: provision_password_results.rc != 0
+- name: set the admin user for setup
+  set_fact:
+    setup_admin_user: "{{ provision_admin_user if admin_password_check.status == 200 | default('rocketskates') }}"
+    setup_admin_password: "{{ provision_admin_password if admin_password_check.status == 200 | default('r0cketsk8ts') }}"
+
+- name: config admin user password
+  uri:
+    url: "https://127.0.0.1:8092/api/v3/users/{{ provision_admin_user }}/password"
+    body: |
+      {
+        "Password": "{{ provision_admin_password }}"
+      }
+    body_format: json
+    method: PUT
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+    user: "{{ setup_admin_user }}"
+    password: "{{ setup_admin_password }}"
+    force_basic_auth: yes
+    return_content: yes
+    validate_certs: no
+  register: change_password_results
+  run_once: yes
+  when: admin_password_check.status != 200
 
 - name: config shell environment with dr-provision api credentials
   copy:
@@ -34,20 +51,31 @@
     dest: "/etc/profile.d/dr-provision.sh"
     mode: 0755
 
-#- name: remove default rocketskates user if different from admin user
-#  shell: "drpcli users destroy rocketskates"
-#  args:
-#    removes: "{{ provision_var_dir }}/digitalrebar/users/rocketskates.json"
-#  when: provision_admin_user != "rocketskates"
+- name: generate admin user token
+  uri:
+    url: "https://127.0.0.1:8092/api/v3/users/{{ setup_admin_user }}/token?ttl={{ provision_token_ttl }}"
+    user: "{{ setup_admin_user }}"
+    password: "{{ setup_admin_password }}"
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+    force_basic_auth: yes
+    return_content: yes
+    validate_certs: no
+  ignore_errors: yes
+  register: admin_token
+  run_once: yes
+
+- name: remove default rocketskates user if different from admin user
+  shell: "drpcli -T {{ admin_token.json.Token }} users destroy rocketskates"
+  args:
+    removes: "{{ provision_var_dir }}/digitalrebar/users/rocketskates.json"
+  when: provision_admin_user != "rocketskates" and admin_password_check.status == 200 and provision_delete_default_user
 
 - name: add drpcli autocomplete definitions
   shell: "drpcli autocomplete /etc/bash_completion.d/drpcli"
   args:
     creates: "/etc/bash_completion.d/drpcli"
-
-- name: generate drpcli token
-  shell: "drpcli -U {{ provision_admin_user }} -P \"{{ provision_admin_password }}\" users token {{ provision_admin_user }}"
-  register: provision_token
 
 - name: config dr-provision preferences
   copy:
@@ -57,7 +85,19 @@
   notify:
     - restart dr-provision
 
-- name: get boot environments
-  shell: "drpcli  -U {{ provision_admin_user }} -P \"{{ provision_admin_password }}\" bootenvs uploadiso {{ item }}"
-  with_items: "{{ provision_content_bootenvs }}"
+- name: check drp-community-content exists
+  command: drpcli -T {{ admin_token.json.Token }} contents exists drp-community-content
+  register: drp_community_content_result
+  ignore_errors: yes
 
+- name: create drp-community-content
+  shell: "drpcli -T {{ admin_token.json.Token }} contents create \"{{ provision_content_dir }}/{{provision_content_release_tag}}/drp-community-content.yaml\""
+  when: verify_provision_content_results.stdout | search("OK") and drp_community_content_result.rc != 0
+
+- name: load drp-community-content
+  shell: "drpcli -T {{ admin_token.json.Token }} contents update drp-community-content \"{{ provision_content_dir }}/{{provision_content_release_tag}}/drp-community-content.yaml\""
+  when: verify_provision_content_results.stdout | search("OK") and drp_community_content_result.rc == 0
+
+- name: get boot environments
+  shell: "drpcli -T {{ admin_token.json.Token }} bootenvs uploadiso {{ item }}"
+  with_items: "{{ provision_content_bootenvs }}"

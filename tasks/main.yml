@@ -1,33 +1,28 @@
 ---
 # tasks file for dr-provision
-- name: Setup prereqs
-  include_tasks: prereqs.yml
-  when: clean == false
+- block:
+  - name: Setup prereqs
+    include_tasks: prereqs.yml
 
-- name: Setup alpine
-  include_tasks: alpine.yml
-  when: clean == false
+  - name: Setup alpine
+    include_tasks: alpine.yml
 
-- name: Setup debian
-  include_tasks: debian.yml
-  when: clean == false
+  - name: Setup debian
+    include_tasks: debian.yml
 
-- name: Setup redhat
-  include_tasks: redhat.yml
-  when: clean == false
+  - name: Setup redhat
+    include_tasks: redhat.yml
 
-- name: Install dr-provision
-  include_tasks: install.yml
-  when: clean == false
+  - name: Install dr-provision
+    include_tasks: install.yml
 
-- name: Start dr-provision
-  include_tasks: service.yml
-  when: clean == false
+  - name: Start dr-provision
+    include_tasks: service.yml
 
-- name: Setup dr-provision
-  include_tasks: setup.yml
-  when: clean == false
+  - name: Setup dr-provision
+    include_tasks: setup.yml
+  when: not provision_clean
 
 - name: Clean dr-provision
   include_tasks: clean.yml
-  when: clean == true
+  when: provision_clean
