@@ -1,4 +1,4 @@
 
 - hosts: all
   roles:
-     - { role: ansible-role-dr-provision, x: 42 }
+     - { role: ansible-role-dr-provision }
