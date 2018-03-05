@@ -24,6 +24,8 @@ provision_content_bootenvs:
   - centos-7-install
   - debian-9-install
 provision_install_default_isos: yes
+provision_files_bootenvs_path: bootenvs
+provision_files_templates_path: templates
 provision_preferences: {}
 provision_options:
   disable-tftp: no
@@ -68,3 +70,4 @@ provision_options:
   base-token-secret: no
   system-grantor-secret: no
   log-level: warn
+provision_profiles: []
