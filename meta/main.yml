@@ -1,26 +1,28 @@
 galaxy_info:
+  role_name: dr-provision
   author: Stan Chan
-  description: dr-provision
-  license: license (Apache)
+  description: Role to install, configure and manager Digital Rebar Provision
+  license: APLv2
   min_ansible_version: 2.4
   # min_ansible_container_version:
-  github_branch:
+  github_branch: v3.8.0.0
   platforms:
     - name: EL
       versions:
         - 7
     - name: Debian
       versions:
-        - 9
-        - 8
+        - jessie
+        - stretch
     - name: Ubuntu
       versions:
         - xenial
     - name: Alpine
       versions:
-        - 3.7.0
+        - all
   galaxy_tags:
-    - dr-provision
+    - pxe
     - rebar
     - provision
+    - cobbler
 dependencies:
