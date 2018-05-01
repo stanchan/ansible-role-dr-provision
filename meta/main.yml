@@ -5,7 +5,7 @@ galaxy_info:
   license: APLv2
   min_ansible_version: 2.4
   # min_ansible_container_version:
-  github_branch: v3.8.0.0
+  github_branch: v3.8.0.1
   platforms:
     - name: EL
       versions:

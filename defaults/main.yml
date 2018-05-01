@@ -5,7 +5,7 @@ systemd_root: /lib/systemd/system
 provision_clean: no
 provision_release_tag: v3.8.0
 provision_release_base_url: https://github.com/digitalrebar/provision/releases/download
-provision_content_release_tag: v1.7.0
+provision_content_release_tag: v1.8.0
 provision_content_release_base_url: https://github.com/digitalrebar/provision-content/releases/download
 provision_user: root
 provision_group: root

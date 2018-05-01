@@ -30,21 +30,133 @@ provision_bootenvs_files:
   - shift-labs-debian-9-install.yaml
 
 provision_templates_files:
+  - shift-labs-net-post-install.sh.tmpl.yaml
   - shift-labs-net-seed.tmpl.yaml
+  - shift-labs-part-scheme-default.tmpl.yaml
   - shift-labs-select-kickseed.tmpl.yaml
 
 provision_profiles:
+  - Available: true
+    Description: Shift Labs profile for k8s cluster parameters
+    Errors: []
+    Meta:
+      color: blue
+      icon: key
+    Name: shift-labs-k8s-install
+    Params:
+      access-keys:
+        root: ssh-rsa ...
+      access-ssh-root-mode: without-password
+      dns-domain: shift-labs.com
+      local-repo: true
+      ntp-servers:
+        - time.google.com
+        - time2.google.com
+        - time3.google.com
+        - time4.google.com
+      package-repositories:
+        - tag: "centos-7-install" # Every repository needs a unique tag.
+          # A repository can be used by multiple operating systems.
+          # The usual example of this is the EPEL repository, which
+          # can be used by all of the RHEL variants of a given generation.
+          os:
+            - "centos-7"
+          # If installSource is true, then the URL points directly
+          # to the location we should use for all OS install purposes
+          # save for fetching kernel/initrd pairs from (for now, we will
+          # still assume that they will live on the DRP server).
+          # When installSounrce is true, the os field must contain a single
+          # entry that is an exact match for the bootenv's OS.Name field.
+          installSource: true
+          # For redhat-ish distros when installSource is true,
+          # this URL must contain distro, component, and arch components,
+          # and as such they do not need to be further specified.
+          url: "http://mirrors.kernel.org/centos/7/os/x86_64"
+        - tag: "centos-7-everything"
+          # Since installSource is not true here,
+          # we can define several package sources at once by
+          # providing a distribution and a components section,
+          # and having the URL point at the top-level directory
+          # where everything is housed.
+          # DRP knows how to expand repo definitions for CentOS and
+          # ScientificLinux provided that they follow the standard
+          # mirror directory layout for each distro.
+          os:
+            - centos-7
+          url: "http://mirrors.kernel.org/centos"
+          distribution: "7"
+          components:
+            - atomic
+            - centosplus
+            - cloud
+            - configmanagement
+            - cr
+            - dotnet
+            - extras
+            - fasttrack
+            - opstools
+            - os
+            - paas
+            - rt
+            - sclo
+            - storage
+            - updates
+        - tag: "debian-9-install"
+          os:
+            - "debian-9"
+          installSource: true
+          # Debian URLs always follow the same rules, no matter
+          # whether the OS install flag is set.  As such,
+          # you must always also specify the distribution and
+          # at least the main component, although you can also
+          # specify other components.
+          url: "http://mirrors.kernel.org/debian"
+          distribution: stretch
+          components:
+            - main
+            - contrib
+            - non-free
+        - tag: "debian-9-backports"
+          os:
+            - "debian-9"
+          url: "http://mirrors.kernel.org/debian"
+          distribution: stretch-updates
+          components:
+            - main
+            - contrib
+            - non-free
+        - tag: "debian-9-security"
+          os:
+            - "debian-9"
+          url: "http://security.debian.org/debian-security/"
+          securitySource: true
+          distribution: stretch/updates
+          components:
+            - contrib
+            - main
+            - non-free
+      zero-hard-disks-for-os-install: true
+    ReadOnly: true
+    Validated: true
   - Available: true
     Description: shift-labs profile for setting the access-keys and access-ssh-root-mode parameters
     Errors: []
     Meta:
       color: blue
       icon: key
-    Name: shift-labs-root-access
+    Name: shift-labs-debian-install
     Params:
       access-keys:
         root: ssh-rsa ...
       access-ssh-root-mode: without-password
+      dns-domain: shift-labs.com
+      local-repo: true
+      ntp-servers:
+        - time.google.com
+        - time2.google.com
+        - time3.google.com
+        - time4.google.com
+      zero-hard-disks-for-os-install: true
     ReadOnly: true
     Validated: true
 
@@ -52,39 +164,63 @@ provision_machines:
   - Name: host01.shift-labs.com
     Address: 10.10.10.10
     BootEnv: debian-9-install
+    Profiles:
+      - shift-labs-debian-install
     Description: host01.shift-labs.com host
   - Name: host02.shift-labs.com
     Address: 10.10.10.11
     BootEnv: debian-9-install
+    Profiles:
+      - shift-labs-debian-install
     Description: host02.shift-labs.com host
   - Name: host03.shift-labs.com
     Address: 10.10.10.12
     BootEnv: debian-9-install
+    Profiles:
+      - shift-labs-debian-install
     Description: host03.shift-labs.com host
   - Name: host04.shift-labs.com
     Address: 10.10.10.13
     BootEnv: debian-9-install
+    Profiles:
+      - shift-labs-debian-install
     Description: host04.shift-labs.com host
   - Name: host05.shift-labs.com
     Address: 10.10.10.14
     BootEnv: debian-9-install
+    Profiles:
+      - shift-labs-debian-install
     Description: host05.shift-labs.com host
   - Name: host06.shift-labs.com
     Address: 10.10.10.15
     BootEnv: debian-9-install
+    Profiles:
+      - shift-labs-debian-install
     Description: host06.shift-labs.com host
   - Name: host07.shift-labs.com
     Address: 10.10.10.16
     BootEnv: debian-9-install
+    Profiles:
+      - shift-labs-debian-install
     Description: host07.shift-labs.com host
   - Name: host08.shift-labs.com
     Address: 10.10.10.17
     BootEnv: debian-9-install
+    Profiles:
+      - shift-labs-debian-install
     Description: host08.shift-labs.com host
   - Name: host09.shift-labs.com
     Address: 10.10.10.18
     BootEnv: debian-9-install
+    Profiles:
+      - shift-labs-debian-install
     Description: host09.shift-labs.com host
+  - Name: host10.shift-labs.com
+    Address: 10.10.10.19
+    BootEnv: debian-9-install
+    Profiles:
+      - shift-labs-debian-install
+    Description: host10.shift-labs.com host
 ```
 
 Dependencies
