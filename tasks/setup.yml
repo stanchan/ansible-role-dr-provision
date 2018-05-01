@@ -101,6 +101,7 @@
 - name: get boot environments
   shell: "drpcli -T {{ admin_token.json.Token }} bootenvs uploadiso {{ item }}"
   with_items: "{{ provision_content_bootenvs }}"
+  when: provision_install_default_isos
 
 - name: copy custom bootenvs
   copy:
